@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abastecimiento de Hojas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-line:#DAD3C2;
+    --card:#FFFFFF;
+    --ink:#231F1B;
+    --ink-soft:#6B6255;
+    --blue:#24597F;
+    --blue-deep:#173F5C;
+    --teal:#2F7565;
+    --rust:#8C3B25;
+    --rust-bg:#F5E6DF;
+    --radius:2px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:
+      linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size: 100% 2.1em;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    padding:32px 20px 80px;
+  }
+
+  h1,h2,h3, .num{
+    font-family:'Space Grotesk', sans-serif;
+  }
+
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  /* ---------- Encabezado tipo formulario sellado ---------- */
+  header.masthead{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    padding:22px 28px;
+    margin-bottom:28px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  header.masthead::before{
+    content:"";
+    position:absolute;
+    top:-6px; left:24px; right:24px; height:6px;
+    background:repeating-linear-gradient(90deg, var(--paper) 0 10px, transparent 10px 14px);
+  }
+  .brand{display:flex; align-items:baseline; gap:14px;}
+  .brand .mark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:1.4rem;
+    color:var(--card);
+    background:var(--blue-deep);
+    padding:4px 10px;
+    letter-spacing:0.5px;
+  }
+  .brand h1{
+    font-size:1.35rem;
+    margin:0;
+    font-weight:600;
+  }
+  .brand p{margin:2px 0 0; color:var(--ink-soft); font-size:0.88rem;}
+  .folio{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    text-align:right;
+    border-left:1px dashed var(--paper-line);
+    padding-left:16px;
+  }
+  .folio strong{display:block; color:var(--ink); font-size:1rem;}
+
+  /* ---------- Layout principal ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:28px;
+  }
+  @media (max-width: 860px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  section.panel{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+  }
+  .panel-head{
+    padding:14px 22px;
+    border-bottom:1px solid var(--paper-line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-head h2{font-size:1rem; margin:0; font-weight:600;}
+  .panel-body{padding:22px;}
+
+  /* ---------- Formulario ---------- */
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block; font-size:0.82rem; color:var(--ink-soft); margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    border:none;
+    border-bottom:1.5px solid var(--ink);
+    background:transparent;
+    font-family:'Inter', sans-serif;
+    font-size:1rem;
+    padding:6px 2px 8px;
+    color:var(--ink);
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-bottom:2px solid var(--blue);
+  }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+
+  .sig-wrap{
+    border:1.5px dashed var(--paper-line);
+    background:repeating-linear-gradient(var(--paper) 0 26px, #EFEAE0 26px 27px);
+    position:relative;
+  }
+  .sig-wrap canvas{display:block; width:100%; height:140px; touch-action:none; cursor:crosshair;}
+  .sig-wrap .placeholder{
+    position:absolute; bottom:8px; left:12px; font-size:0.78rem; color:var(--ink-soft); pointer-events:none;
+  }
+  .sig-actions{display:flex; justify-content:flex-end; margin-top:6px;}
+  .link-btn{
+    background:none; border:none; color:var(--blue); font-size:0.8rem; cursor:pointer; padding:4px;
+    font-family:'Inter', sans-serif;
+  }
+
+  button.submit{
+    width:100%;
+    background:var(--blue-deep);
+    color:#fff;
+    border:none;
+    padding:13px 20px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    cursor:pointer;
+    margin-top:6px;
+    transition:background .15s ease;
+  }
+  button.submit:hover{background:var(--blue);}
+  button.submit:disabled{background:#B9B2A3; cursor:not-allowed;}
+
+  .msg{
+    margin-top:14px; padding:10px 14px; font-size:0.88rem; display:none;
+  }
+  .msg.ok{display:block; background:#E7F0EA; color:var(--teal); border-left:3px solid var(--teal);}
+  .msg.err{display:block; background:var(--rust-bg); color:var(--rust); border-left:3px solid var(--rust);}
+
+  /* ---------- Panel de estadísticas ---------- */
+  .stat-row{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:10px 0; border-bottom:1px solid var(--paper-line);
+  }
+  .stat-row:last-child{border-bottom:none;}
+  .stat-row span:first-child{color:var(--ink-soft); font-size:0.88rem;}
+  .stat-row .num{font-size:1.05rem; font-weight:600;}
+
+  .bar-group{margin-top:18px;}
+  .bar-item{margin-bottom:12px;}
+  .bar-label{
+    display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:4px; color:var(--ink-soft);
+  }
+  .bar-track{height:8px; background:#EFEAE0;}
+  .bar-fill{height:100%; background:var(--teal);}
+
+  /* ---------- Historial tipo ledger ---------- */
+  .ledger{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  .ledger th{
+    text-align:left; font-weight:600; color:var(--ink-soft);
+    font-size:0.75rem; letter-spacing:0.02em;
+    padding:8px 10px; border-bottom:1.5px solid var(--ink);
+  }
+  .ledger td{
+    padding:9px 10px; border-bottom:1px solid var(--paper-line);
+    color:var(--ink);
+  }
+  .ledger tr:hover td{background:#FBF9F4;}
+  .empty-row td{color:var(--ink-soft); text-align:center; padding:26px 10px; font-style:italic;}
+
+  .top-bar{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap;
+  }
+  .search-input{
+    border:1px solid var(--paper-line); padding:7px 10px; font-family:'Inter', sans-serif;
+    font-size:0.85rem; min-width:180px; background:var(--card);
+  }
+  .config-note{
+    font-size:0.78rem; color:var(--ink-soft); margin-top:22px; padding-top:12px; border-top:1px dashed var(--paper-line);
+  }
+  .config-note code{background:#EFEAE0; padding:2px 5px;}
+
+  footer{text-align:center; color:var(--ink-soft); font-size:0.78rem; margin-top:40px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="brand">
+      <span class="mark">GT</span>
+      <div>
+        <h1>Abastecimiento de Hojas</h1>
+        <p>Registro y control de entregas de papel por área e impresora</p>
+      </div>
+    </div>
+    <div class="folio">
+      Folio activo
+      <strong id="folioNum">—</strong>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ---------- FORMULARIO ---------- -->
+    <section class="panel">
+      <div class="panel-head"><h2>Nueva entrega</h2></div>
+      <div class="panel-body">
+        <form id="entregaForm">
+          <div class="field">
+            <label for="nombre">Nombre completo</label>
+            <input type="text" id="nombre" required placeholder="Ej. Judith Marianne Álvarez Romero">
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label for="area">Área</label>
+              <select id="area" required>
+                <option value="" disabled selected>Selecciona...</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="impresora">Impresora</label>
+              <select id="impresora" required>
+                <option value="" disabled selected>Selecciona...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label for="cantidad">Cantidad (paquetes)</label>
+              <input type="number" id="cantidad" min="1" max="5" value="1" required>
+            </div>
+            <div class="field">
+              <label for="fecha">Fecha</label>
+              <input type="date" id="fecha" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Firma</label>
+            <div class="sig-wrap">
+              <canvas id="sigCanvas"></canvas>
+              <span class="placeholder" id="sigPlaceholder">Firma aquí con el mouse o el dedo</span>
+            </div>
+            <div class="sig-actions">
+              <button type="button" class="link-btn" id="clearSig">Borrar firma</button>
+            </div>
+          </div>
+
+          <button type="submit" class="submit" id="submitBtn">Registrar entrega</button>
+          <div class="msg" id="formMsg"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ---------- PANEL DE RESUMEN ---------- -->
+    <section class="panel">
+      <div class="panel-head"><h2>Resumen</h2></div>
+      <div class="panel-body">
+        <div class="stat-row">
+          <span>Entregas registradas</span>
+          <span class="num" id="statTotal">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Paquetes este mes</span>
+          <span class="num" id="statMes">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Personas activas este mes</span>
+          <span class="num" id="statPersonas">0</span>
+        </div>
+
+        <div class="bar-group">
+          <h3 style="font-size:0.85rem; margin:0 0 6px; color:var(--ink-soft); font-weight:600;">Por área</h3>
+          <div id="barsArea"></div>
+        </div>
+        <div class="bar-group">
+          <h3 style="font-size:0.85rem; margin:0 0 6px; color:var(--ink-soft); font-weight:600;">Por impresora</h3>
+          <div id="barsImpresora"></div>
+        </div>
+
+        <p class="config-note">
+          Conectada a tu Google Sheet vía Apps Script. Para cambiar el destino,
+          edita la constante <code>APPS_SCRIPT_URL</code> al inicio del script de esta página.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ---------- HISTORIAL ---------- -->
+  <section class="panel" style="margin-top:28px;">
+    <div class="panel-head">
+      <h2>Historial de entregas</h2>
+    </div>
+    <div class="panel-body">
+      <div class="top-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="Buscar por nombre, área o impresora...">
+        <button class="link-btn" id="refreshBtn" style="border:1px solid var(--paper-line); padding:6px 12px;">Actualizar</button>
+      </div>
+      <table class="ledger">
+        <thead>
+          <tr>
+            <th>Folio</th><th>Fecha</th><th>Nombre</th><th>Área</th><th>Impresora</th><th>Cant.</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerBody">
+          <tr class="empty-row"><td colspan="6">Cargando registros...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Abastecimiento de Hojas · datos almacenados en Google Sheets / Drive</footer>
+</div>
+
+<!-- Iframe oculto + formulario espejo: evita el bloqueo de CORS al enviar datos -->
+<iframe name="hidden_iframe_admin" style="display:none"></iframe>
+<form id="hiddenForm" action="" method="POST" target="hidden_iframe_admin" style="display:none">
+  <input type="hidden" name="nombre">
+  <input type="hidden" name="area">
+  <input type="hidden" name="impresora">
+  <input type="hidden" name="cantidad">
+  <input type="hidden" name="fecha">
+  <input type="hidden" name="firma">
+</form>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN — pega aquí la URL de tu Apps Script Web App
+   (la obtienes al implementar Codigo_AppsScript.gs)
+   ========================================================= */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3evsdcFpGIY3MTMvOW1sgL8RP2MsJ5C2MiAaAw09nDCncCRB5ZiHKWu7S4y99SW7Kkg/exec";
+
+const AREAS = ["I+D", "Sistemas", "Logística", "Logística CH", "Logística CG", "Operaciones", "Compras", "Financiero", "RH"];
+const IMPRESORAS = ["Sistemas Operaciones", "Logística Operaciones", "Operaciones Compras", "Calidad Compras", "Producción"];
+
+let registros = [];
+
+function poblarSelects(){
+  const selArea = document.getElementById('area');
+  const selImp = document.getElementById('impresora');
+  AREAS.forEach(a => selArea.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`));
+  IMPRESORAS.forEach(i => selImp.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`));
+}
+
+/* ---------- Firma en canvas ---------- */
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false, hasSignature = false;
+
+function resizeCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * ratio;
+  canvas.height = rect.height * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = "#231F1B";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+}
+window.addEventListener('resize', () => { const data = hasSignature ? canvas.toDataURL() : null; resizeCanvas(); });
+resizeCanvas();
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return {x,y};
+}
+function startDraw(e){ drawing = true; hasSignature = true; document.getElementById('sigPlaceholder').style.display='none'; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+function moveDraw(e){ if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+function endDraw(){ drawing = false; }
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw);
+canvas.addEventListener('touchmove', moveDraw);
+canvas.addEventListener('touchend', endDraw);
+
+document.getElementById('clearSig').addEventListener('click', () => {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hasSignature = false;
+  document.getElementById('sigPlaceholder').style.display='block';
+});
+
+/* ---------- JSONP: leer datos de Apps Script sin bloqueo de CORS ---------- */
+function jsonpRequest(){
+  return new Promise((resolve, reject) => {
+    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('Tiempo de espera agotado.')); }, 8000);
+    function cleanup(){ delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); clearTimeout(timeout); }
+    window[cbName] = (data) => { cleanup(); resolve(data); };
+    script.onerror = () => { cleanup(); reject(new Error('No se pudo contactar a Apps Script.')); };
+    script.src = APPS_SCRIPT_URL + (APPS_SCRIPT_URL.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    document.body.appendChild(script);
+  });
+}
+
+let conteoAntesDeEnviar = null;
+
+/* ---------- Envío del formulario (vía iframe oculto, sin fetch) ---------- */
+document.getElementById('fecha').valueAsDate = new Date();
+
+document.getElementById('entregaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('formMsg');
+  msg.className = 'msg';
+  msg.style.display = 'none';
+
+  if (!hasSignature){
+    msg.textContent = 'La firma es obligatoria antes de registrar.';
+    msg.className = 'msg err';
+    return;
+  }
+  if (APPS_SCRIPT_URL.includes('PEGA_AQUI')){
+    msg.textContent = 'Todavía no configuras la URL de Apps Script en el código de esta página.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Registrando...';
+
+  const payload = {
+    nombre: document.getElementById('nombre').value.trim(),
+    area: document.getElementById('area').value,
+    impresora: document.getElementById('impresora').value,
+    cantidad: document.getElementById('cantidad').value,
+    fecha: document.getElementById('fecha').value,
+    firma: canvas.toDataURL('image/png')
+  };
+
+  try{
+    const antes = await jsonpRequest();
+    conteoAntesDeEnviar = (antes.rows || []).length;
+
+    const form = document.getElementById('hiddenForm');
+    form.action = APPS_SCRIPT_URL;
+    form.nombre.value = payload.nombre;
+    form.area.value = payload.area;
+    form.impresora.value = payload.impresora;
+    form.cantidad.value = payload.cantidad;
+    form.fecha.value = payload.fecha;
+    form.firma.value = payload.firma;
+    form.submit();
+
+    await confirmarRegistro();
+  } catch(err){
+    msg.textContent = 'No se pudo conectar con Apps Script: ' + err.message;
+    msg.className = 'msg err';
+    btn.disabled = false;
+    btn.textContent = 'Registrar entrega';
+  }
+});
+
+async function confirmarRegistro(intentos = 5){
+  const msg = document.getElementById('formMsg');
+  const btn = document.getElementById('submitBtn');
+
+  for (let i = 0; i < intentos; i++){
+    await new Promise(r => setTimeout(r, 1400));
+    try{
+      const data = await jsonpRequest();
+      const filas = data.rows || [];
+      if (filas.length > conteoAntesDeEnviar){
+        msg.textContent = 'Entrega registrada correctamente.';
+        msg.className = 'msg ok';
+        document.getElementById('entregaForm').reset();
+        document.getElementById('fecha').valueAsDate = new Date();
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        hasSignature = false;
+        document.getElementById('sigPlaceholder').style.display='block';
+        registros = filas;
+        document.getElementById('folioNum').textContent = '#' + (registros.length + 1);
+        renderLedger(registros);
+        renderResumen(registros);
+        btn.disabled = false;
+        btn.textContent = 'Registrar entrega';
+        return;
+      }
+    } catch(err){ /* seguimos intentando */ }
+  }
+
+  msg.textContent = 'No pudimos confirmar el registro automáticamente. Revisa la hoja o intenta de nuevo.';
+  msg.className = 'msg err';
+  btn.disabled = false;
+  btn.textContent = 'Registrar entrega';
+}
+
+/* ---------- Carga de datos y resumen ---------- */
+async function cargarDatos(){
+  const tbody = document.getElementById('ledgerBody');
+  try{
+    if (APPS_SCRIPT_URL.includes('PEGA_AQUI')){
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Configura APPS_SCRIPT_URL para cargar datos reales.</td></tr>`;
+      return;
+    }
+    const data = await jsonpRequest();
+    registros = data.rows || [];
+    document.getElementById('folioNum').textContent = '#' + (registros.length + 1);
+    renderLedger(registros);
+    renderResumen(registros);
+  } catch(err){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No se pudo conectar con la hoja de Drive.</td></tr>`;
+  }
+}
+
+function renderLedger(rows){
+  const tbody = document.getElementById('ledgerBody');
+  if (!rows.length){
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Aún no hay entregas registradas.</td></tr>`;
+    return;
+  }
+  const ordered = [...rows].reverse();
+  tbody.innerHTML = ordered.map(r => `
+    <tr>
+      <td>${r['ID'] ?? ''}</td>
+      <td>${formatFecha(r['Fecha'])}</td>
+      <td>${r['Nombre Completo'] ?? ''}</td>
+      <td>${r['Área'] ?? ''}</td>
+      <td>${r['Impresora'] ?? ''}</td>
+      <td>${r['Cantidad'] ?? ''}</td>
+    </tr>
+  `).join('');
+}
+
+function formatFecha(f){
+  if (!f) return '';
+  const d = new Date(f);
+  if (isNaN(d)) return f;
+  return d.toLocaleDateString('es-MX', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function renderResumen(rows){
+  const now = new Date();
+  document.getElementById('statTotal').textContent = rows.length;
+
+  const delMes = rows.filter(r => {
+    const d = new Date(r['Fecha']);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const totalPaquetesMes = delMes.reduce((acc, r) => acc + (Number(r['Cantidad']) || 0), 0);
+  const personas = new Set(delMes.map(r => r['Nombre Completo']));
+  document.getElementById('statMes').textContent = totalPaquetesMes;
+  document.getElementById('statPersonas').textContent = personas.size;
+
+  pintarBarras('barsArea', 'Área', rows);
+  pintarBarras('barsImpresora', 'Impresora', rows);
+}
+
+function pintarBarras(containerId, campo, rows){
+  const totals = {};
+  rows.forEach(r => {
+    const key = r[campo] || '(sin dato)';
+    totals[key] = (totals[key] || 0) + (Number(r['Cantidad']) || 0);
+  });
+  const max = Math.max(1, ...Object.values(totals));
+  const container = document.getElementById(containerId);
+  const entries = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+  if (!entries.length){
+    container.innerHTML = `<p style="font-size:0.82rem; color:var(--ink-soft);">Sin datos aún.</p>`;
+    return;
+  }
+  container.innerHTML = entries.map(([label, val]) => `
+    <div class="bar-item">
+      <div class="bar-label"><span>${label}</span><span>${val}</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(val/max)*100}%"></div></div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  const filtered = registros.filter(r =>
+    (r['Nombre Completo']||'').toLowerCase().includes(q) ||
+    (r['Área']||'').toLowerCase().includes(q) ||
+    (r['Impresora']||'').toLowerCase().includes(q)
+  );
+  renderLedger(filtered);
+});
+
+document.getElementById('refreshBtn').addEventListener('click', cargarDatos);
+
+poblarSelects();
+cargarDatos();
+</script>
+</body>
+</html>
