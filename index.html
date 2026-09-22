@@ -195,24 +195,12 @@
   <footer>Abastecimiento de Hojas — solo formulario de captura. El historial y los reportes los gestiona el área responsable.</footer>
 </div>
 
-<!-- Iframe oculto + formulario espejo: el envío real pasa por aquí, no por fetch,
-     porque los formularios NO están sujetos a la política CORS que bloquea a fetch(). -->
-<iframe name="hidden_iframe" style="display:none"></iframe>
-<form id="hiddenForm" action="" method="POST" target="hidden_iframe" style="display:none">
-  <input type="hidden" name="nombre">
-  <input type="hidden" name="area">
-  <input type="hidden" name="impresora">
-  <input type="hidden" name="cantidad">
-  <input type="hidden" name="fecha">
-  <input type="hidden" name="firma">
-</form>
-
 <script>
 /* =========================================================
    CONFIGURACIÓN — pega aquí la URL de tu Apps Script Web App
    (la misma que usas en el panel administrativo)
    ========================================================= */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3evsdcFpGIY3MTMvOW1sgL8RP2MsJ5C2MiAaAw09nDCncCRB5ZiHKWu7S4y99SW7Kkg/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGufgFQO5oC0OVTICE9RxgBaqdF1fPiSBUgkQ8E2pX6GFhCmfua9DnfI7A-eJH6sbIlA/exec";
 
 const AREAS = ["I+D", "Sistemas", "Logística", "Logística CH", "Logística CG", "Operaciones", "Compras", "Financiero", "RH"];
 const IMPRESORAS = ["Sistemas Operaciones", "Logística Operaciones", "Operaciones Compras", "Calidad Compras", "Producción"];
@@ -266,30 +254,34 @@ document.getElementById('clearSig').addEventListener('click', () => {
   document.getElementById('sigPlaceholder').style.display='block';
 });
 
-/* ---------- JSONP: leer datos de Apps Script sin bloqueo de CORS ---------- */
-function jsonpRequest(){
+/* ---------- JSONP: hablar con Apps Script sin bloqueo de CORS ---------- */
+function jsonpRequest(params){
   return new Promise((resolve, reject) => {
-    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    const cbName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random()*100000);
     const script = document.createElement('script');
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('Tiempo de espera agotado al consultar Apps Script.'));
-    }, 8000);
-    function cleanup(){
-      delete window[cbName];
-      if (script.parentNode) script.parentNode.removeChild(script);
-      clearTimeout(timeout);
-    }
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('Tiempo de espera agotado.')); }, 10000);
+    function cleanup(){ delete window[cbName]; if (script.parentNode) script.parentNode.removeChild(script); clearTimeout(timeout); }
     window[cbName] = (data) => { cleanup(); resolve(data); };
     script.onerror = () => { cleanup(); reject(new Error('No se pudo contactar a Apps Script.')); };
-    script.src = APPS_SCRIPT_URL + (APPS_SCRIPT_URL.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+    script.src = APPS_SCRIPT_URL + '?' + qs;
     document.body.appendChild(script);
   });
 }
 
-let conteoAntesDeEnviar = null;
+/* Manda la firma (base64, muy larga) en pedacitos pequeños vía GET,
+   porque una sola URL no puede cargar un texto tan largo de un jalón. */
+async function enviarFirmaPorPartes(sessionId, firma){
+  const TAMANO_PARTE = 1400;
+  const total = Math.ceil(firma.length / TAMANO_PARTE) || 1;
+  for (let i = 0; i < total; i++){
+    const parte = firma.substring(i * TAMANO_PARTE, (i + 1) * TAMANO_PARTE);
+    await jsonpRequest({ action: 'chunk', sessionId, index: i, data: parte });
+  }
+  return total;
+}
 
-/* ---------- Envío del formulario (vía iframe oculto, sin fetch) ---------- */
+/* ---------- Envío del formulario (todo por GET/JSONP) ---------- */
 document.getElementById('fecha').valueAsDate = new Date();
 
 document.getElementById('entregaForm').addEventListener('submit', async (e) => {
@@ -323,60 +315,38 @@ document.getElementById('entregaForm').addEventListener('submit', async (e) => {
   };
 
   try {
-    // 1) Contamos cuántas filas hay ANTES de enviar, para luego confirmar que creció.
-    const antes = await jsonpRequest();
-    conteoAntesDeEnviar = (antes.rows || []).length;
+    const sessionId = 'sess_' + Date.now() + '_' + Math.floor(Math.random()*100000);
+    btn.textContent = 'Enviando firma...';
+    const total = await enviarFirmaPorPartes(sessionId, payload.firma);
 
-    // 2) Llenamos el formulario oculto y lo enviamos al iframe (esto SÍ funciona sin CORS).
-    const form = document.getElementById('hiddenForm');
-    form.action = APPS_SCRIPT_URL;
-    form.nombre.value = payload.nombre;
-    form.area.value = payload.area;
-    form.impresora.value = payload.impresora;
-    form.cantidad.value = payload.cantidad;
-    form.fecha.value = payload.fecha;
-    form.firma.value = payload.firma;
-    form.submit();
+    btn.textContent = 'Guardando...';
+    const resultado = await jsonpRequest({
+      action: 'finalize',
+      sessionId,
+      total,
+      nombre: payload.nombre,
+      area: payload.area,
+      impresora: payload.impresora,
+      cantidad: payload.cantidad,
+      fecha: payload.fecha
+    });
 
-    // 3) Esperamos un momento y volvemos a consultar para confirmar que sí se guardó.
-    await confirmarRegistro();
+    if (resultado.ok){
+      document.getElementById('confirmFolio').textContent = '#' + (resultado.id ?? '');
+      document.getElementById('entregaForm').style.display = 'none';
+      document.getElementById('confirmView').style.display = 'block';
+    } else {
+      msg.textContent = resultado.error || 'No se pudo registrar la entrega.';
+      msg.className = 'msg err';
+    }
   } catch (err){
     msg.textContent = 'No se pudo conectar con Apps Script: ' + err.message;
     msg.className = 'msg err';
+  } finally {
     btn.disabled = false;
     btn.textContent = 'Registrar entrega';
   }
 });
-
-async function confirmarRegistro(intentos = 5){
-  const msg = document.getElementById('formMsg');
-  const btn = document.getElementById('submitBtn');
-
-  for (let i = 0; i < intentos; i++){
-    await new Promise(r => setTimeout(r, 1400));
-    try{
-      const data = await jsonpRequest();
-      const filas = data.rows || [];
-      if (filas.length > conteoAntesDeEnviar){
-        const ultima = filas[filas.length - 1];
-        document.getElementById('confirmFolio').textContent = '#' + (ultima['ID'] ?? '');
-        document.getElementById('entregaForm').style.display = 'none';
-        document.getElementById('confirmView').style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Registrar entrega';
-        return;
-      }
-    } catch(err){
-      // si una consulta falla, seguimos intentando
-    }
-  }
-
-  // Si tras varios intentos no vemos la fila nueva, avisamos sin asegurar éxito ni error.
-  msg.textContent = 'No pudimos confirmar el registro automáticamente. Revisa la hoja de cálculo; si no aparece tu entrega, verifica los datos (cantidad máxima, límite mensual) e intenta de nuevo.';
-  msg.className = 'msg err';
-  btn.disabled = false;
-  btn.textContent = 'Registrar entrega';
-}
 
 document.getElementById('nuevaBtn').addEventListener('click', () => {
   document.getElementById('entregaForm').reset();
