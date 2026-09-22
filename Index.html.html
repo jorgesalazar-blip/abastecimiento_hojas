@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud de Hojas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F3EC;
+    --paper-line:#DAD3C2;
+    --card:#FFFFFF;
+    --ink:#231F1B;
+    --ink-soft:#6B6255;
+    --blue:#24597F;
+    --blue-deep:#173F5C;
+    --teal:#2F7565;
+    --rust:#8C3B25;
+    --rust-bg:#F5E6DF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    background-image:linear-gradient(var(--paper-line) 1px, transparent 1px);
+    background-size:100% 2.1em;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:40px 20px 80px;
+  }
+  h1,h2,h3{font-family:'Space Grotesk', sans-serif;}
+
+  .card{
+    width:100%;
+    max-width:780px;
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    position:relative;
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:-7px; left:32px; right:32px; height:7px;
+    background:repeating-linear-gradient(90deg, var(--paper) 0 12px, transparent 12px 17px);
+  }
+
+  .card-head{
+    padding:36px 44px 24px;
+    border-bottom:1px solid var(--paper-line);
+    display:flex; align-items:center; gap:18px;
+  }
+  .mark{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700; font-size:1.7rem; color:#fff;
+    background:var(--blue-deep); padding:8px 15px;
+  }
+  .card-head h1{font-size:1.8rem; margin:0; font-weight:600;}
+  .card-head p{margin:4px 0 0; color:var(--ink-soft); font-size:1.05rem;}
+
+  .card-body{padding:36px 44px 44px;}
+
+  .field{margin-bottom:26px;}
+  .field label{display:block; font-size:1rem; color:var(--ink-soft); margin-bottom:9px;}
+  .field input, .field select{
+    width:100%; border:none; border-bottom:2px solid var(--ink);
+    background:transparent; font-family:'Inter', sans-serif; font-size:1.25rem;
+    padding:9px 2px 11px; color:var(--ink);
+  }
+  .field input:focus, .field select:focus{outline:none; border-bottom:2px solid var(--blue);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+
+  .sig-wrap{
+    border:1.5px dashed var(--paper-line);
+    background:repeating-linear-gradient(var(--paper) 0 32px, #EFEAE0 32px 33px);
+    position:relative;
+  }
+  .sig-wrap canvas{display:block; width:100%; height:200px; touch-action:none; cursor:crosshair;}
+  .sig-wrap .placeholder{
+    position:absolute; bottom:10px; left:14px; font-size:0.92rem; color:var(--ink-soft); pointer-events:none;
+  }
+  .sig-actions{display:flex; justify-content:flex-end; margin-top:8px;}
+  .link-btn{background:none; border:none; color:var(--blue); font-size:0.92rem; cursor:pointer; padding:4px; font-family:'Inter', sans-serif;}
+
+  button.submit{
+    width:100%; background:var(--blue-deep); color:#fff; border:none;
+    padding:19px 20px; font-family:'Space Grotesk', sans-serif; font-weight:600;
+    font-size:1.15rem; cursor:pointer; margin-top:10px; transition:background .15s ease;
+  }
+  button.submit:hover{background:var(--blue);}
+  button.submit:disabled{background:#B9B2A3; cursor:not-allowed;}
+
+  .msg{margin-top:18px; padding:13px 18px; font-size:1.02rem; display:none;}
+  .msg.ok{display:block; background:#E7F0EA; color:var(--teal); border-left:3px solid var(--teal);}
+  .msg.err{display:block; background:var(--rust-bg); color:var(--rust); border-left:3px solid var(--rust);}
+
+  /* ---------- Confirmación (reemplaza el formulario) ---------- */
+  .confirm{display:none; text-align:center; padding:30px 10px 10px;}
+  .check-badge{
+    width:64px; height:64px; border-radius:50%; background:var(--teal);
+    color:#fff; font-size:1.8rem; display:flex; align-items:center; justify-content:center;
+    margin:0 auto 16px;
+  }
+  .confirm .folio{
+    font-family:'Space Grotesk', sans-serif; font-size:3rem; font-weight:700; color:var(--blue-deep);
+    margin:14px 0 6px;
+  }
+  .confirm p{color:var(--ink-soft); font-size:1.05rem; margin:0 0 26px;}
+  .confirm button{
+    background:none; border:1.5px solid var(--ink); color:var(--ink);
+    padding:13px 22px; font-family:'Space Grotesk', sans-serif; font-weight:600;
+    cursor:pointer; font-size:1rem;
+  }
+
+  footer{text-align:center; color:var(--ink-soft); font-size:0.92rem; margin-top:26px; max-width:780px;}
+</style>
+</head>
+<body>
+<div style="width:100%; display:flex; flex-direction:column; align-items:center;">
+
+  <div class="card">
+    <div class="card-head">
+      <span class="mark">GT</span>
+      <div>
+        <h1>Solicitud de Hojas</h1>
+        <p>Registra tu entrega de papel</p>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- ---------- FORMULARIO ---------- -->
+      <form id="entregaForm">
+        <div class="field">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" required placeholder="Ej. Oguire Lubaggi Madrazo">
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="area">Área</label>
+            <select id="area" required>
+              <option value="" disabled selected>Selecciona...</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="impresora">Impresora</label>
+            <select id="impresora" required>
+              <option value="" disabled selected>Selecciona...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="cantidad">Cantidad (paquetes)</label>
+            <input type="number" id="cantidad" min="1" max="5" value="1" required>
+          </div>
+          <div class="field">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Firma</label>
+          <div class="sig-wrap">
+            <canvas id="sigCanvas"></canvas>
+            <span class="placeholder" id="sigPlaceholder">Firma aquí con el mouse o el dedo</span>
+          </div>
+          <div class="sig-actions">
+            <button type="button" class="link-btn" id="clearSig">Borrar firma</button>
+          </div>
+        </div>
+
+        <button type="submit" class="submit" id="submitBtn">Solicitar</button>
+        <div class="msg" id="formMsg"></div>
+      </form>
+
+      <!-- ---------- CONFIRMACIÓN ---------- -->
+      <div class="confirm" id="confirmView">
+        <div class="check-badge">✓</div>
+        <p style="margin-bottom:0; color:var(--ink-soft); font-size:0.95rem;">Solicitud registrada correctamente</p>
+        <div class="folio" id="confirmFolio">#0</div>
+        <p>Folio de tu solicitud. Guárdalo por si necesitas darle seguimiento.</p>
+        <button id="nuevaBtn">Solicitar</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Abastecimiento de Hojas — solo formulario de captura. Soporte TI.</footer>
+</div>
+
+<script>
+/* =========================================================
+   CONFIGURACIÓN — pega aquí la URL de tu Apps Script Web App
+   (la misma que usas en el panel administrativo)
+   ========================================================= */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw3evsdcFpGIY3MTMvOW1sgL8RP2MsJ5C2MiAaAw09nDCncCRB5ZiHKWu7S4y99SW7Kkg/exec";
+
+const AREAS = ["I+D", "Sistemas", "Logística", "Logística CH", "Logística CG", "Operaciones", "Compras", "Financiero", "RH"];
+const IMPRESORAS = ["Sistemas Operaciones", "Logística Operaciones", "Operaciones Compras", "Calidad Compras", "Producción"];
+
+function poblarSelects(){
+  const selArea = document.getElementById('area');
+  const selImp = document.getElementById('impresora');
+  AREAS.forEach(a => selArea.insertAdjacentHTML('beforeend', `<option value="${a}">${a}</option>`));
+  IMPRESORAS.forEach(i => selImp.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`));
+}
+
+/* ---------- Firma en canvas ---------- */
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false, hasSignature = false;
+
+function resizeCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * ratio;
+  canvas.height = rect.height * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.strokeStyle = "#231F1B";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return {x,y};
+}
+function startDraw(e){ drawing = true; hasSignature = true; document.getElementById('sigPlaceholder').style.display='none'; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+function moveDraw(e){ if(!drawing) return; const p = getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+function endDraw(){ drawing = false; }
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+canvas.addEventListener('mouseup', endDraw);
+canvas.addEventListener('mouseleave', endDraw);
+canvas.addEventListener('touchstart', startDraw);
+canvas.addEventListener('touchmove', moveDraw);
+canvas.addEventListener('touchend', endDraw);
+
+document.getElementById('clearSig').addEventListener('click', () => {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hasSignature = false;
+  document.getElementById('sigPlaceholder').style.display='block';
+});
+
+/* ---------- Envío del formulario ---------- */
+document.getElementById('fecha').valueAsDate = new Date();
+
+document.getElementById('entregaForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('formMsg');
+  msg.className = 'msg';
+  msg.style.display = 'none';
+
+  if (!hasSignature){
+    msg.textContent = 'La firma es obligatoria antes de registrar.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const payload = {
+    nombre: document.getElementById('nombre').value.trim(),
+    area: document.getElementById('area').value,
+    impresora: document.getElementById('impresora').value,
+    cantidad: document.getElementById('cantidad').value,
+    fecha: document.getElementById('fecha').value,
+    firma: canvas.toDataURL('image/png')
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Registrando...';
+
+  try{
+    if (APPS_SCRIPT_URL.includes('PEGA_AQUI')){
+      throw new Error('Todavía no configuras la URL de Apps Script en el código de esta página.');
+    }
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok){
+      document.getElementById('confirmFolio').textContent = '#' + (data.id ?? '');
+      document.getElementById('entregaForm').style.display = 'none';
+      document.getElementById('confirmView').style.display = 'block';
+    } else {
+      msg.textContent = data.error || 'No se pudo registrar la entrega.';
+      msg.className = 'msg err';
+    }
+  } catch(err){
+    msg.textContent = err.message;
+    msg.className = 'msg err';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Registrar entrega';
+  }
+});
+
+document.getElementById('nuevaBtn').addEventListener('click', () => {
+  document.getElementById('entregaForm').reset();
+  document.getElementById('fecha').valueAsDate = new Date();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  hasSignature = false;
+  document.getElementById('sigPlaceholder').style.display='block';
+  document.getElementById('formMsg').style.display = 'none';
+  document.getElementById('confirmView').style.display = 'none';
+  document.getElementById('entregaForm').style.display = 'block';
+});
+
+poblarSelects();
+</script>
+</body>
+</html>
